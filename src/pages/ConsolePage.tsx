@@ -8,8 +8,7 @@
  * This will also require you to set OPENAI_API_KEY= in a `.env` file
  * You can run it with `npm run relay`, in parallel with `npm start`
  */
-const LOCAL_RELAY_SERVER_URL: string =
-  process.env.REACT_APP_LOCAL_RELAY_SERVER_URL || '';
+const LOCAL_RELAY_SERVER_URL: string = 'ws://localhost:8787/websocket';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
@@ -25,7 +24,6 @@ import { Toggle } from '../components/toggle/Toggle';
 import { Map } from '../components/Map';
 
 import './ConsolePage.scss';
-import { isJsxOpeningLikeElement } from 'typescript';
 
 /**
  * Type for result from get_weather() function call
@@ -181,13 +179,13 @@ export function ConsolePage() {
 
     // Connect to realtime API
     await client.connect();
-    client.sendUserMessageContent([
-      {
-        type: `input_text`,
-        text: `Hello!`,
-        // text: `For testing purposes, I want you to list ten car brands. Number each item, e.g. "one (or whatever number you are one): the item name".`
-      },
-    ]);
+    // client.sendUserMessageContent([
+    //   {
+    //     type: `input_text`,
+    //     // text: `Hello!`,
+    //     text: `Tell me about AI in 3 words.`,
+    //   },
+    // ]);
 
     if (client.getTurnDetectionType() === 'server_vad') {
       await wavRecorder.record((data) => client.appendInputAudio(data.mono));
@@ -199,8 +197,8 @@ export function ConsolePage() {
    */
   const disconnectConversation = useCallback(async () => {
     setIsConnected(false);
-    setRealtimeEvents([]);
-    setItems([]);
+    // setRealtimeEvents([]);
+    // setItems([]);
     setMemoryKv({});
     setCoords({
       lat: 37.775593,
