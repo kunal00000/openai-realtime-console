@@ -8,7 +8,8 @@
  * This will also require you to set OPENAI_API_KEY= in a `.env` file
  * You can run it with `npm run relay`, in parallel with `npm start`
  */
-const LOCAL_RELAY_SERVER_URL: string = 'ws://localhost:8787/websocket';
+const LOCAL_RELAY_SERVER_URL: string =
+  'https://echo.siddhartha-5c5.workers.dev/websocket?token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjhkOWJlZmQzZWZmY2JiYzgyYzgzYWQwYzk3MmM4ZWE5NzhmNmYxMzciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiUHJvIFVzZXIiLCJhZ2dyZWdhdG9yIjoic3RyaXBlIiwicm9sZSI6InBhaWQiLCJwbGFuTmFtZSI6Ik1lcmxpbiBQcm8iLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZm95ZXItd29yayIsImF1ZCI6ImZveWVyLXdvcmsiLCJhdXRoX3RpbWUiOjE3MjkxNjk1NjAsInVzZXJfaWQiOiJ2YmlJRXY1NDkxYTVSZFZ1dTE0eERTWHBYU3EyIiwic3ViIjoidmJpSUV2NTQ5MWE1UmRWdXUxNHhEU1hwWFNxMiIsImlhdCI6MTcyOTI1MTAwNiwiZXhwIjoxNzI5MjU0NjA2LCJlbWFpbCI6InByb3VzZXJAZ2V0bWVybGluLmluIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsicHJvdXNlckBnZXRtZXJsaW4uaW4iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.VqYDU9UBOENLLzbS3sUNP2dXl2brD1IO1qnwCx0Ltet1JFuEqs7jiZmrF9ZM8fY_YZqtcHz0zkfX54IUZ01fwQtQWKAEDiNIWhopoWeWmLM5auwlfB5q8FnzdU1h-7eYYxr6d2Vn0yWrRnZbwGhmuN_GfP5Z3u71LOMv8haSJH7TT8lD41avyAsis9OueEVAXcIpt-JHDwBnXcobozXSBKCzVENje45PI8PR2xIHeB-nbRlUmBXY1LQKcTv3aH7mqBB7M1zUQJ0LQUCy4jtYKoU3RSr49OvrtsrgOmeJmtbelK2aqJl3c8r4wi35Rd4oIUHYvfDKMxSREOrjfjA4Gg';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
@@ -375,83 +376,10 @@ export function ConsolePage() {
     const client = clientRef.current;
 
     // Set instructions
-    client.updateSession({ instructions: instructions });
-    // Set transcription, otherwise we don't get user transcriptions back
-    client.updateSession({ input_audio_transcription: { model: 'whisper-1' } });
-
-    // Add tools
-    client.addTool(
-      {
-        name: 'set_memory',
-        description: 'Saves important data about the user into memory.',
-        parameters: {
-          type: 'object',
-          properties: {
-            key: {
-              type: 'string',
-              description:
-                'The key of the memory value. Always use lowercase and underscores, no other characters.',
-            },
-            value: {
-              type: 'string',
-              description: 'Value can be anything represented as a string',
-            },
-          },
-          required: ['key', 'value'],
-        },
-      },
-      async ({ key, value }: { [key: string]: any }) => {
-        setMemoryKv((memoryKv) => {
-          const newKv = { ...memoryKv };
-          newKv[key] = value;
-          return newKv;
-        });
-        return { ok: true };
-      }
-    );
-    client.addTool(
-      {
-        name: 'get_weather',
-        description:
-          'Retrieves the weather for a given lat, lng coordinate pair. Specify a label for the location.',
-        parameters: {
-          type: 'object',
-          properties: {
-            lat: {
-              type: 'number',
-              description: 'Latitude',
-            },
-            lng: {
-              type: 'number',
-              description: 'Longitude',
-            },
-            location: {
-              type: 'string',
-              description: 'Name of the location',
-            },
-          },
-          required: ['lat', 'lng', 'location'],
-        },
-      },
-      async ({ lat, lng, location }: { [key: string]: any }) => {
-        setMarker({ lat, lng, location });
-        setCoords({ lat, lng, location });
-        const result = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`
-        );
-        const json = await result.json();
-        const temperature = {
-          value: json.current.temperature_2m as number,
-          units: json.current_units.temperature_2m as string,
-        };
-        const wind_speed = {
-          value: json.current.wind_speed_10m as number,
-          units: json.current_units.wind_speed_10m as string,
-        };
-        setMarker({ lat, lng, location, temperature, wind_speed });
-        return json;
-      }
-    );
+    client.updateSession({
+      instructions: instructions,
+      input_audio_transcription: { model: 'whisper-1' },
+    });
 
     // handle realtime events from client + server for event logging
     client.on('realtime.event', (realtimeEvent: RealtimeEvent) => {
@@ -466,7 +394,7 @@ export function ConsolePage() {
         }
       });
     });
-    client.on('error', (event: any) => console.error(event));
+    client.on('error', (event: any) => console.log(event));
     client.on('conversation.interrupted', async () => {
       const trackSampleOffset = await wavStreamPlayer.interrupt();
       if (trackSampleOffset?.trackId) {
